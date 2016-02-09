@@ -1,3 +1,4 @@
+import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
@@ -11,8 +12,8 @@ import java.util.Random;
 
 public class MyKaleidoscope implements GLEventListener {
 
-    public int windowWidth = 1000;
-    public int windowHeight = 1000;
+    public static int windowWidth = 800;
+    public static int windowHeight = 800;
     public final int viewportWidth = windowWidth / 2;
     public final int viewportHeight = windowHeight / 2;
 
@@ -21,10 +22,10 @@ public class MyKaleidoscope implements GLEventListener {
     public Color bg = Color.decode("#2C3E50");
     public ArrayList<Color> palette;
 
-    public final static int NUM = 3000;
+    public static ArrayList<ReflectedObject> reflectedObjects = new ArrayList<>();
 
-    public double x[];
-    public double y[];
+    public final static int NUM = 3000;
+    public final double DEG2RAD = 3.14159/180;
 
     public MyKaleidoscope() {
         palette = new ArrayList<>();
@@ -37,12 +38,69 @@ public class MyKaleidoscope implements GLEventListener {
 
     public static void main(String[] args) {
         GLJPanel canvas = new GLJPanel();
-
         MyKaleidoscope kaleidoscope = new MyKaleidoscope();
+
+        Random r = new Random();
+        for(int shapeNum = 0; shapeNum < 10; shapeNum++) {
+            int shape = r.nextInt(4);
+            int size = r.nextInt(15) + 5;
+
+            float[] color = kaleidoscope.getRandomPaletteColorArray();
+
+            ArrayList<Vertex> vertices = new ArrayList<>();
+
+
+            int quadrantWidth = windowWidth / 2;
+            int quadrantHeight = windowHeight / 2;
+
+            switch(shape) {
+                case 0:
+                    // generate triangle vertices
+                    for(int i = 0; i < 3; i++) {
+                        int x = r.nextInt(quadrantWidth);
+                        int y = r.nextInt(quadrantHeight);
+
+                        vertices.add(new Vertex(x, y));
+                    }
+
+                    reflectedObjects.add(new ReflectedObject(vertices, KShape.TRIANGLE, color));
+                    break;
+                case 1:
+                    // generate circle vertices
+                    int startingX = r.nextInt(quadrantWidth);
+                    int startingY = r.nextInt(quadrantHeight);
+
+                    vertices = kaleidoscope.circle(size, startingX, startingY);
+                    reflectedObjects.add(new ReflectedObject(vertices, KShape.CIRCLE, color));
+                    break;
+                case 2:
+                    // generate quad vertices
+                    int width = r.nextInt(20) + 1;
+                    int height = r.nextInt(20) + 1;
+                    startingX = r.nextInt(quadrantWidth);
+                    startingY = r.nextInt(quadrantHeight);
+                    vertices = kaleidoscope.rect(width, height, startingX, startingY);
+
+                    reflectedObjects.add(new ReflectedObject(vertices, KShape.QUAD, color));
+                    break;
+                case 3:
+                    // add butterfly to ReflectedObjects list
+                    startingX = r.nextInt(quadrantWidth);
+                    startingY = r.nextInt(quadrantHeight);
+                    double a = 5.0/3.0;
+                    double b = 7.0/6.0;
+                    vertices = kaleidoscope.epicycloid(size, a, b, startingX, startingY);
+                    reflectedObjects.add(new ReflectedObject(vertices, KShape.EPICYCLOID, color));
+                    break;
+                default:
+                    throw new Error("Uhh... This shouldn't happen.");
+            }
+        }
+
         canvas.addGLEventListener(kaleidoscope);
         JFrame frame = new JFrame("MyKaleidoscope");
-        frame.setSize(1000, 1000);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(MyKaleidoscope.windowWidth, windowHeight);
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.getContentPane().add(canvas);
         frame.setVisible(true);
         canvas.requestFocusInWindow();
@@ -50,16 +108,20 @@ public class MyKaleidoscope implements GLEventListener {
 
     @Override
     public void init(GLAutoDrawable drawable) {
-        x = new double[NUM];
-        y = new double[NUM];
-
         GL2 gl = drawable.getGL().getGL2();
         glu = new GLU();
 
-        gl.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        // make things pretty and antialias everything :)
+        if (gl.isExtensionAvailable("GL_ARB_multisample")) {
+            gl.glEnable(GL.GL_MULTISAMPLE);
+        }
+
+        float[] bgArr = getGLColorArray(bg);
+        float r = bgArr[0], g = bgArr[1], b = bgArr[2];
+        gl.glClearColor(r, g, b, 1.0f);
         gl.glMatrixMode(GL2.GL_PROJECTION);
         gl.glLoadIdentity();
-        glu.gluOrtho2D(-1.0, 1.0, -1.0, 1.0);
+        glu.gluOrtho2D(-windowWidth / 2, windowWidth / 2, -windowHeight / 2, windowHeight / 2);
         gl.glMatrixMode(GL2.GL_MODELVIEW);
     }
 
@@ -78,37 +140,32 @@ public class MyKaleidoscope implements GLEventListener {
         float r = bgArr[0], g = bgArr[1], b = bgArr[2];
         gl.glClearColor(r, g, b, 1.0f);
 
-        // quadrant 1
-        gl.glViewport(windowWidth / 2, windowHeight / 2, viewportWidth, viewportHeight);
+        Color lineColor = Color.decode("#F62459");
+        float[] lineColorArr = getGLColorArray(lineColor);
 
-        // quadrant 2
-        gl.glViewport(0, windowHeight / 2, viewportWidth, viewportHeight);
+        gl.glColor3f(lineColorArr[0], lineColorArr[1], lineColorArr[2]);
+        gl.glLineWidth(0.7f);
+        gl.glBegin(GL.GL_LINES);
+        gl.glVertex2i(-windowWidth, 0);
+        gl.glVertex2i(windowWidth, 0);
+        gl.glEnd();
 
-        // quadrant 3
-        gl.glViewport(0, 0, viewportWidth, viewportHeight);
+        gl.glBegin(GL.GL_LINES);
+        gl.glVertex2i(0, -windowHeight);
+        gl.glVertex2i(0, windowHeight);
+        gl.glEnd();
 
-        // quadrant 4
-        gl.glViewport(windowWidth / 2, 0, viewportWidth, viewportHeight);
+        for(ReflectedObject ro : reflectedObjects) {
+            ro.draw(glAutoDrawable);
+            gl.glFlush();
+        }
+
     }
 
 
     @Override
-    public void reshape(GLAutoDrawable glAutoDrawable, int i, int i1, int i2, int i3) {
+    public void reshape(GLAutoDrawable drawable, int i, int i1, int i2, int i3) {
 
-    }
-
-    public float[] getRandomPaletteColorArray() {
-        Random r = new Random();
-        int random = r.nextInt(palette.size() + 1);
-
-        Color c = palette.get(random);
-        float[] arr = new float[3];
-
-        arr[0] = (float) (c.getRed() / 255.0);
-        arr[1] = (float) (c.getGreen() / 255.0);
-        arr[2] = (float) (c.getBlue() / 255.0);
-
-        return arr;
     }
 
     public float[] getGLColorArray(Color c) {
@@ -122,23 +179,51 @@ public class MyKaleidoscope implements GLEventListener {
     }
 
 
-    public void genie(GL2 gl) {
-        double fact, fact_now, fact7, fact8;
-        double size = 0.3;
+    public ArrayList<Vertex> epicycloid(int size, double a, double b, int startX, int startY) {
+        final int POINTS = 3000;
 
-        fact = (8 * 2 * Math.PI) / NUM;
-        for(int i = 0; i < NUM; i++) {
-            fact_now = fact * i;
-            fact7 = fact_now * 7;
-            fact8 = fact_now * 8;
-            x[i] = size * (Math.cos(fact_now) + Math.sin(fact8));
-            y[i] = size * (2.0 * Math.sin(fact_now) + Math.sin(fact7));
+        ArrayList<Vertex> vertices = new ArrayList<>();
+
+        for(int i = 0; i < (100 * Math.PI); i++) {
+            double x = startX + (size * ((a + b) * Math.cos(i) - b * Math.cos((a / b + 1) * i)));
+            double y = startY + (size * ((a + b) * Math.sin(i) - b * Math.sin((a / b + 1) * i)));
+
+            vertices.add(new Vertex(x, y));
         }
 
-        gl.glBegin(GL2.GL_LINE_LOOP);
+        return vertices;
+    }
+
+    public ArrayList<Vertex> circle(int size, int startX, int startY) {
+        ArrayList<Vertex> vertices = new ArrayList<>();
+
         for(int i = 0; i < NUM; i++) {
-            gl.glVertex2d(x[i], y[i]);
+            double degInRad = i * DEG2RAD;
+
+            double x = startX + Math.cos(degInRad) * size;
+            double y = startY + Math.sin(degInRad) * size;
+
+            vertices.add(new Vertex(x, y));
         }
-        gl.glEnd();
+
+        return vertices;
+    }
+
+    public ArrayList<Vertex> rect(int width, int height, int startX, int startY) {
+        ArrayList<Vertex> vertices = new ArrayList<>();
+
+        vertices.add(new Vertex(startX, startY)); // bottom left
+        vertices.add(new Vertex(startX + width, startY)); // bottom right
+        vertices.add(new Vertex(startX + width, startY + height)); // top right
+        vertices.add(new Vertex(startX, startY + height)); // top left
+
+        return vertices;
+    }
+
+    public float[] getRandomPaletteColorArray() {
+        Random r = new Random();
+        int rand = r.nextInt(palette.size());
+
+        return getGLColorArray(palette.get(rand));
     }
 }
