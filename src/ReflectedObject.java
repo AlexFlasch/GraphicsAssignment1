@@ -5,24 +5,24 @@ import com.jogamp.opengl.GLDrawable;
 
 import java.util.ArrayList;
 
-public class ReflectedObject {
+public class ReflectedObject implements Cloneable {
 
     // a ReflectedObject takes into account the 0,0 of a viewport,
     // assuming the viewport is square, and they are all the same size
     // using these assumptions, we can translate the vertices for this object
     // into drawable objects in each of the quadrants
 
-    public static ArrayList<Vertex> vertices;
-    public static KShape shapeType;
-    public static float[] colorRGB;
+    public ArrayList<Vertex> vertices;
+    public KShape shapeType;
+    public float[] colorRGB;
 
     public ReflectedObject(ArrayList<Vertex> verts, KShape shape, float[] color) {
-        vertices = verts;
+        this.vertices = verts;
         shapeType = shape;
         colorRGB = color;
     }
 
-    private static ArrayList<Vertex> getVerticesForQuadrant(int quadrant) {
+    private ArrayList<Vertex> getVerticesForQuadrant(int quadrant) {
         ArrayList<Vertex> translatedVerts = new ArrayList<>();
 
         switch(quadrant) {
@@ -58,7 +58,7 @@ public class ReflectedObject {
 
             case 4:
                 // calculate vertices for quadrant 4 (bottom right)
-                for(Vertex vert : vertices) {
+                for(Vertex vert : getVertices()) {
                     double translatedX = vert.x;
                     double translatedY = -1 * vert.y;
 
@@ -105,5 +105,17 @@ public class ReflectedObject {
             }
             gl.glEnd();
         }
+    }
+
+    public KShape getShapeType() {
+        return shapeType;
+    }
+
+    public float[] getColorRGB() {
+        return colorRGB;
+    }
+
+    public ArrayList<Vertex> getVertices() {
+        return vertices;
     }
 }

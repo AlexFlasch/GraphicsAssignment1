@@ -14,8 +14,9 @@ public class MyKaleidoscope implements GLEventListener {
 
     public static int windowWidth = 800;
     public static int windowHeight = 800;
-    public final int viewportWidth = windowWidth / 2;
-    public final int viewportHeight = windowHeight / 2;
+
+    public static int viewportsX;
+    public static int viewportsY;
 
     private GLU glu;
 
@@ -29,6 +30,7 @@ public class MyKaleidoscope implements GLEventListener {
 
     public MyKaleidoscope() {
         palette = new ArrayList<>();
+        // take hex values and turn them into java Color objects :)
         palette.add(Color.decode("#22A7F0"));
         palette.add(Color.decode("#2ECC71"));
         palette.add(Color.decode("#F27935"));
@@ -40,62 +42,16 @@ public class MyKaleidoscope implements GLEventListener {
         GLJPanel canvas = new GLJPanel();
         MyKaleidoscope kaleidoscope = new MyKaleidoscope();
 
-        Random r = new Random();
-        for(int shapeNum = 0; shapeNum < 10; shapeNum++) {
-            int shape = r.nextInt(4);
-            int size = r.nextInt(15) + 5;
+        int arg1 = 3;
+        int arg2 = 3;
 
-            float[] color = kaleidoscope.getRandomPaletteColorArray();
-
-            ArrayList<Vertex> vertices = new ArrayList<>();
-
-
-            int quadrantWidth = windowWidth / 2;
-            int quadrantHeight = windowHeight / 2;
-
-            switch(shape) {
-                case 0:
-                    // generate triangle vertices
-                    for(int i = 0; i < 3; i++) {
-                        int x = r.nextInt(quadrantWidth);
-                        int y = r.nextInt(quadrantHeight);
-
-                        vertices.add(new Vertex(x, y));
-                    }
-
-                    reflectedObjects.add(new ReflectedObject(vertices, KShape.TRIANGLE, color));
-                    break;
-                case 1:
-                    // generate circle vertices
-                    int startingX = r.nextInt(quadrantWidth);
-                    int startingY = r.nextInt(quadrantHeight);
-
-                    vertices = kaleidoscope.circle(size, startingX, startingY);
-                    reflectedObjects.add(new ReflectedObject(vertices, KShape.CIRCLE, color));
-                    break;
-                case 2:
-                    // generate quad vertices
-                    int width = r.nextInt(20) + 1;
-                    int height = r.nextInt(20) + 1;
-                    startingX = r.nextInt(quadrantWidth);
-                    startingY = r.nextInt(quadrantHeight);
-                    vertices = kaleidoscope.rect(width, height, startingX, startingY);
-
-                    reflectedObjects.add(new ReflectedObject(vertices, KShape.QUAD, color));
-                    break;
-                case 3:
-                    // add butterfly to ReflectedObjects list
-                    startingX = r.nextInt(quadrantWidth);
-                    startingY = r.nextInt(quadrantHeight);
-                    double a = 5.0/3.0;
-                    double b = 7.0/6.0;
-                    vertices = kaleidoscope.epicycloid(size, a, b, startingX, startingY);
-                    reflectedObjects.add(new ReflectedObject(vertices, KShape.EPICYCLOID, color));
-                    break;
-                default:
-                    throw new Error("Uhh... This shouldn't happen.");
-            }
+        if(args.length != 0) {
+            arg1 = Integer.parseInt(args[0]);
+            arg2 = Integer.parseInt(args[1]);
         }
+
+        viewportsX = arg1;
+        viewportsY = arg2;
 
         canvas.addGLEventListener(kaleidoscope);
         JFrame frame = new JFrame("MyKaleidoscope");
@@ -119,9 +75,16 @@ public class MyKaleidoscope implements GLEventListener {
         float[] bgArr = getGLColorArray(bg);
         float r = bgArr[0], g = bgArr[1], b = bgArr[2];
         gl.glClearColor(r, g, b, 1.0f);
+        gl.glClear(GL.GL_COLOR_BUFFER_BIT);
         gl.glMatrixMode(GL2.GL_PROJECTION);
         gl.glLoadIdentity();
-        glu.gluOrtho2D(-windowWidth / 2, windowWidth / 2, -windowHeight / 2, windowHeight / 2);
+
+        gl.glFlush();
+
+        int viewportWidth = windowWidth / viewportsX;
+        int viewportHeight = windowHeight / viewportsY;
+
+        glu.gluOrtho2D(-viewportWidth / 2, viewportWidth / 2, -viewportHeight / 2, viewportHeight / 2);
         gl.glMatrixMode(GL2.GL_MODELVIEW);
     }
 
@@ -134,30 +97,27 @@ public class MyKaleidoscope implements GLEventListener {
     public void display(GLAutoDrawable glAutoDrawable) {
         GL2 gl = glAutoDrawable.getGL().getGL2();
 
-        // clear all pixels
-        gl.glClear(GL2.GL_COLOR_BUFFER_BIT);
-        float[] bgArr = getGLColorArray(bg);
-        float r = bgArr[0], g = bgArr[1], b = bgArr[2];
-        gl.glClearColor(r, g, b, 1.0f);
-
         Color lineColor = Color.decode("#F62459");
         float[] lineColorArr = getGLColorArray(lineColor);
 
-        gl.glColor3f(lineColorArr[0], lineColorArr[1], lineColorArr[2]);
-        gl.glLineWidth(0.7f);
-        gl.glBegin(GL.GL_LINES);
-        gl.glVertex2i(-windowWidth, 0);
-        gl.glVertex2i(windowWidth, 0);
-        gl.glEnd();
+        int viewportWidth = windowWidth / viewportsX;
+        int viewportHeight = windowHeight / viewportsY;
 
-        gl.glBegin(GL.GL_LINES);
-        gl.glVertex2i(0, -windowHeight);
-        gl.glVertex2i(0, windowHeight);
-        gl.glEnd();
+        // create proper amount of viewports
+        for(int i = 0; i < viewportsY; i++) {
+            for(int j = 0; j < viewportsX; j++) {
+                int viewportOffsetX = j * viewportWidth;
+                int viewportOffsetY = i * viewportHeight;
 
-        for(ReflectedObject ro : reflectedObjects) {
+                gl.glViewport(viewportOffsetX, viewportOffsetY, viewportWidth, viewportHeight);
+                generateShapes();
+            }
+        }
+
+        gl.glFlush();
+
+        for (ReflectedObject ro : reflectedObjects) {
             ro.draw(glAutoDrawable);
-            gl.glFlush();
         }
 
     }
@@ -200,8 +160,8 @@ public class MyKaleidoscope implements GLEventListener {
         for(int i = 0; i < NUM; i++) {
             double degInRad = i * DEG2RAD;
 
-            double x = startX + Math.cos(degInRad) * size;
-            double y = startY + Math.sin(degInRad) * size;
+            double x = startX + Math.cos(degInRad) * (size * 2);
+            double y = startY + Math.sin(degInRad) * (size * 2);
 
             vertices.add(new Vertex(x, y));
         }
@@ -225,5 +185,76 @@ public class MyKaleidoscope implements GLEventListener {
         int rand = r.nextInt(palette.size());
 
         return getGLColorArray(palette.get(rand));
+    }
+
+    public void generateShapes() {
+        Random r = new Random();
+
+        for(int shapeNum = 0; shapeNum < 50; shapeNum++) {
+            int shape = r.nextInt(4);
+            int size = r.nextInt(15) + 5;
+
+            float[] color = getRandomPaletteColorArray();
+
+            ArrayList<Vertex> vertices = new ArrayList<>();
+
+            ReflectedObject temp;
+
+            int quadrantWidth = windowWidth / 2;
+            int quadrantHeight = windowHeight / 2;
+
+            switch(shape) {
+                case 0:
+                    // generate triangle vertices
+                    for(int i = 0; i < 3; i++) {
+                        int x = r.nextInt(quadrantWidth);
+                        int y = r.nextInt(quadrantHeight);
+
+                        vertices.add(new Vertex(x, y));
+                    }
+
+                    temp = new ReflectedObject(vertices, KShape.TRIANGLE, color);
+                    reflectedObjects.add(temp);
+                    break;
+
+                case 1:
+                    // generate circle vertices
+                    int startingX = r.nextInt(quadrantWidth);
+                    int startingY = r.nextInt(quadrantHeight);
+
+                    vertices = circle(size, startingX, startingY);
+
+                    temp = new ReflectedObject(vertices, KShape.CIRCLE, color);
+                    reflectedObjects.add(temp);
+                    break;
+
+                case 2:
+                    // generate quad vertices
+                    int width = r.nextInt(200) + 1;
+                    int height = r.nextInt(200) + 1;
+                    startingX = r.nextInt(quadrantWidth);
+                    startingY = r.nextInt(quadrantHeight);
+                    vertices = rect(width, height, startingX, startingY);
+
+                    temp = new ReflectedObject(vertices, KShape.QUAD, color);
+                    reflectedObjects.add(temp);
+                    break;
+
+                case 3:
+                    // add butterfly to ReflectedObjects list
+                    startingX = r.nextInt(quadrantWidth);
+                    startingY = r.nextInt(quadrantHeight);
+                    double a = 5.0/3.0;
+                    double b = 7.0/6.0;
+                    vertices = epicycloid(size, a, b, startingX, startingY);
+
+                    temp = new ReflectedObject(vertices, KShape.EPICYCLOID, color);
+                    reflectedObjects.add(temp);
+                    break;
+
+                default:
+                    throw new Error("Uhh... This shouldn't happen.");
+            }
+        }
     }
 }
