@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="93b72b13-4407-4b81-ab76-8daee9ee387f" name="Default" comment="Got the kaleidoscope working now. Need to get the multiple viewports functioning properly.">
+    <list default="true" id="93b72b13-4407-4b81-ab76-8daee9ee387f" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/GraphicsAssignment1/MyKaleidoscope.class" afterPath="$PROJECT_DIR$/out/production/GraphicsAssignment1/MyKaleidoscope.class" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/GraphicsAssignment1/ReflectedObject.class" afterPath="$PROJECT_DIR$/out/production/GraphicsAssignment1/ReflectedObject.class" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/MyKaleidoscope.java" afterPath="$PROJECT_DIR$/src/MyKaleidoscope.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ReflectedObject.java" afterPath="$PROJECT_DIR$/src/ReflectedObject.java" />
     </list>
     <ignored path="GraphicsAssignment1.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -29,8 +30,8 @@
       <file leaf-file-name="MyKaleidoscope.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/MyKaleidoscope.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.33206832">
-              <caret line="119" column="36" selection-start-line="119" selection-start-column="36" selection-end-line="119" selection-end-column="36" />
+            <state vertical-scroll-proportion="0.20303605">
+              <caret line="110" column="55" selection-start-line="110" selection-start-column="55" selection-end-line="110" selection-end-column="55" />
               <folding />
             </state>
           </provider>
@@ -481,7 +482,13 @@
       <option name="project" value="LOCAL" />
       <updated>1455036497676</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Got the kaleidoscope working now. Need to get the multiple viewports functioning properly.">
+      <created>1455070424108</created>
+      <option name="number" value="00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1455070424109</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -530,15 +537,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/MyKaleidoscope.java</url>
-          <line>111</line>
-          <properties />
-          <option name="timeStamp" value="16" />
-        </line-breakpoint>
-      </breakpoints>
-      <option name="time" value="17" />
+      <option name="time" value="19" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -653,8 +652,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/MyKaleidoscope.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33206832">
-          <caret line="119" column="36" selection-start-line="119" selection-start-column="36" selection-end-line="119" selection-end-column="36" />
+        <state vertical-scroll-proportion="0.20303605">
+          <caret line="110" column="55" selection-start-line="110" selection-start-column="55" selection-end-line="110" selection-end-column="55" />
           <folding />
         </state>
       </provider>

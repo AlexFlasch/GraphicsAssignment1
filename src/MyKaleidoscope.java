@@ -12,20 +12,20 @@ import java.util.Random;
 
 public class MyKaleidoscope implements GLEventListener {
 
-    public static int windowWidth = 800;
-    public static int windowHeight = 800;
+    public int windowWidth = 800;
+    public int windowHeight = 800;
 
-    public static int viewportsX;
-    public static int viewportsY;
+    public int viewportsX;
+    public int viewportsY;
 
     private GLU glu;
 
     public Color bg = Color.decode("#2C3E50");
     public ArrayList<Color> palette;
 
-    public static ArrayList<ReflectedObject> reflectedObjects = new ArrayList<>();
+    public ArrayList<ReflectedObject> reflectedObjects = new ArrayList<>();
 
-    public final static int NUM = 3000;
+    public final int NUM = 3000;
     public final double DEG2RAD = 3.14159/180;
 
     public MyKaleidoscope() {
@@ -36,6 +36,8 @@ public class MyKaleidoscope implements GLEventListener {
         palette.add(Color.decode("#F27935"));
         palette.add(Color.decode("#8E44AD"));
         palette.add(Color.decode("#D64541"));
+        palette.add(Color.decode("#F7CA18"));
+        palette.add(Color.decode("#F62459"));
     }
 
     public static void main(String[] args) {
@@ -50,12 +52,12 @@ public class MyKaleidoscope implements GLEventListener {
             arg2 = Integer.parseInt(args[1]);
         }
 
-        viewportsX = arg1;
-        viewportsY = arg2;
+        kaleidoscope.viewportsX = arg1;
+        kaleidoscope.viewportsY = arg2;
 
         canvas.addGLEventListener(kaleidoscope);
         JFrame frame = new JFrame("MyKaleidoscope");
-        frame.setSize(MyKaleidoscope.windowWidth, windowHeight);
+        frame.setSize(kaleidoscope.windowWidth, kaleidoscope.windowHeight);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.getContentPane().add(canvas);
         frame.setVisible(true);
@@ -100,8 +102,8 @@ public class MyKaleidoscope implements GLEventListener {
         Color lineColor = Color.decode("#F62459");
         float[] lineColorArr = getGLColorArray(lineColor);
 
-        int viewportWidth = windowWidth / viewportsX;
-        int viewportHeight = windowHeight / viewportsY;
+        int viewportWidth = 2 * (windowWidth / viewportsX);
+        int viewportHeight = 2 * (windowHeight / viewportsY);
 
         // create proper amount of viewports
         for(int i = 0; i < viewportsY; i++) {
@@ -111,17 +113,19 @@ public class MyKaleidoscope implements GLEventListener {
 
                 gl.glViewport(viewportOffsetX, viewportOffsetY, viewportWidth, viewportHeight);
                 generateShapes();
+
+                // draw shapes for current viewport
+                for (ReflectedObject ro : reflectedObjects) {
+                    ro.draw(glAutoDrawable);
+                }
+                // clear list so its different for the next viewport
+                reflectedObjects.clear();
             }
         }
 
         gl.glFlush();
 
-        for (ReflectedObject ro : reflectedObjects) {
-            ro.draw(glAutoDrawable);
-        }
-
     }
-
 
     @Override
     public void reshape(GLAutoDrawable drawable, int i, int i1, int i2, int i3) {
@@ -137,7 +141,6 @@ public class MyKaleidoscope implements GLEventListener {
 
         return arr;
     }
-
 
     public ArrayList<Vertex> epicycloid(int size, double a, double b, int startX, int startY) {
         final int POINTS = 3000;
@@ -190,7 +193,7 @@ public class MyKaleidoscope implements GLEventListener {
     public void generateShapes() {
         Random r = new Random();
 
-        for(int shapeNum = 0; shapeNum < 50; shapeNum++) {
+        for(int shapeNum = 0; shapeNum < 100; shapeNum++) {
             int shape = r.nextInt(4);
             int size = r.nextInt(15) + 5;
 
