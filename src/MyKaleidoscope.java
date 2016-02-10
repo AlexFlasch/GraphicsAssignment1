@@ -4,11 +4,27 @@ import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.awt.GLJPanel;
 import com.jogamp.opengl.glu.GLU;
+import com.jogamp.opengl.util.gl2.GLUT;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Random;
+
+/*
+ *   Some extra features added to this program:
+ *       * A color palette: each shape will choose a color randomly from the palette
+ *       * Random shapes, there are a few things about these:
+ *           * Random size
+ *           * Random vertices position
+ *           * Random color (as stated earlier)
+ *           * Random shape type (triangle, circle, rectangle, epicycloid)
+ *
+ *   I chose an epicycloid for my parameterized curve shape. The equation I found for generating
+ *   one of these can be found here: https://elepa.files.wordpress.com/2013/11/fifty-famous-curves.pdf
+ *   on page 17 (it is shape #16). Unfortunately my rendered version doesn't look quite like the picture,
+ *   but I actually enjoy the look of it currently and so I kept it.
+ */
 
 public class MyKaleidoscope implements GLEventListener {
 
@@ -18,7 +34,9 @@ public class MyKaleidoscope implements GLEventListener {
     public int viewportsX;
     public int viewportsY;
 
+    private GLUT glut;
     private GLU glu;
+    private GL2 gl;
 
     public Color bg = Color.decode("#2C3E50");
     public ArrayList<Color> palette;
@@ -28,6 +46,9 @@ public class MyKaleidoscope implements GLEventListener {
     public final int NUM = 3000;
     public final double DEG2RAD = 3.14159/180;
 
+    /**
+     * Constructor: doesn't do a whole ton aside from define the palette.
+     */
     public MyKaleidoscope() {
         palette = new ArrayList<>();
         // take hex values and turn them into java Color objects :)
@@ -40,6 +61,13 @@ public class MyKaleidoscope implements GLEventListener {
         palette.add(Color.decode("#F62459"));
     }
 
+    /**
+     * Main method which gets everything set up for rendering.
+     *
+     * @param args Accepts 2 parameters:
+     *             first defines the amount of viewports in the x direction
+     *             second defines the amount of viewports in the y direction
+     */
     public static void main(String[] args) {
         GLJPanel canvas = new GLJPanel();
         MyKaleidoscope kaleidoscope = new MyKaleidoscope();
@@ -64,10 +92,18 @@ public class MyKaleidoscope implements GLEventListener {
         canvas.requestFocusInWindow();
     }
 
+    /**
+     *  init sets a few things up. Among many things, it adds antialiasing for pretty looking shapes,
+     *  sets the background color, calculates what the width and height of the viewports should be,
+     *  and lastly sets the gluOrtho2D.
+     *
+     * @param drawable JOGL drawable object
+     */
     @Override
     public void init(GLAutoDrawable drawable) {
-        GL2 gl = drawable.getGL().getGL2();
+        gl = drawable.getGL().getGL2();
         glu = new GLU();
+        glut = new GLUT();
 
         // make things pretty and antialias everything :)
         if (gl.isExtensionAvailable("GL_ARB_multisample")) {
@@ -95,13 +131,50 @@ public class MyKaleidoscope implements GLEventListener {
 
     }
 
+    /**
+     * Runs the methods necessary to draw everything to the screen/viewports!
+     *
+     * @param glAutoDrawable JOGL GLAutoDrawable object
+     */
     @Override
     public void display(GLAutoDrawable glAutoDrawable) {
-        GL2 gl = glAutoDrawable.getGL().getGL2();
+        gl = glAutoDrawable.getGL().getGL2();
 
-        Color lineColor = Color.decode("#F62459");
-        float[] lineColorArr = getGLColorArray(lineColor);
+        drawShapes(gl);
 
+        gl.glFlush();
+
+    }
+
+    @Override
+    public void reshape(GLAutoDrawable drawable, int i, int i1, int i2, int i3) {
+
+    }
+
+    /**
+     * This method will take a Java Color object and transform it into an array of 3 floats that
+     * can be used in glColor3f.
+     *
+     * @param c The Java Color object to transform into a float array suitable for glColor3f.
+     * @return an array of 3 floats. The first being R, second is G, third is B all out of 1 for use in glColor3f.
+     */
+    public float[] getGLColorArray(Color c) {
+        float[] arr = new float[3];
+
+        arr[0] = (float) (c.getRed() / 255.0);
+        arr[1] = (float) (c.getGreen() / 255.0);
+        arr[2] = (float) (c.getBlue() / 255.0);
+
+        return arr;
+    }
+
+    /**
+     * This method creates the required amount of viewports and generates the shapes to be drawn in a viewport,
+     * draws those shapes, and then generates an entire new set of shapes for the next viewport.
+     *
+     * @param gl JOGL GL2 object
+     */
+    public void drawShapes(GL2 gl) {
         int viewportWidth = 2 * (windowWidth / viewportsX);
         int viewportHeight = 2 * (windowHeight / viewportsY);
 
@@ -116,32 +189,24 @@ public class MyKaleidoscope implements GLEventListener {
 
                 // draw shapes for current viewport
                 for (ReflectedObject ro : reflectedObjects) {
-                    ro.draw(glAutoDrawable);
+                    ro.draw(gl);
                 }
                 // clear list so its different for the next viewport
                 reflectedObjects.clear();
             }
         }
-
-        gl.glFlush();
-
     }
 
-    @Override
-    public void reshape(GLAutoDrawable drawable, int i, int i1, int i2, int i3) {
-
-    }
-
-    public float[] getGLColorArray(Color c) {
-        float[] arr = new float[3];
-
-        arr[0] = (float) (c.getRed() / 255.0);
-        arr[1] = (float) (c.getGreen() / 255.0);
-        arr[2] = (float) (c.getBlue() / 255.0);
-
-        return arr;
-    }
-
+    /**
+     * Generates the vertices used to draw an epicycloid using a parameterized curve and the parameters passed into it.
+     *
+     * @param size This variable determines the size of the entire shape being drawn.
+     * @param a This is (supposed to be) the radius of the inner circle in which the outer circle rotates around.
+     * @param b This is (supposed to be) the radius of the outer circle that rotates around the inner circle.
+     * @param startX This determines the x point on the screen that the vertices are generated at.
+     * @param startY This determines the y point on the screen that the vertices are generated at.
+     * @return A list of Vertex objects (Made myself, mostly just container objects) that is used to draw in OpenGL.
+     */
     public ArrayList<Vertex> epicycloid(int size, double a, double b, int startX, int startY) {
         final int POINTS = 3000;
 
@@ -157,6 +222,14 @@ public class MyKaleidoscope implements GLEventListener {
         return vertices;
     }
 
+    /**
+     * Generates the vertices used to draw a circle using a parameterized curve and a triangle fan to make a filled in circle.
+     *
+     * @param size This variable determines the size of the circle.
+     * @param startX This determines the x point on the screen that the vertices are generated at.
+     * @param startY This determines the y point on the screen that the vertices are generated at.
+     * @return A list of Vertex objects that is used to tell OpenGL how to draw the circle
+     */
     public ArrayList<Vertex> circle(int size, int startX, int startY) {
         ArrayList<Vertex> vertices = new ArrayList<>();
 
@@ -172,6 +245,16 @@ public class MyKaleidoscope implements GLEventListener {
         return vertices;
     }
 
+    /**
+     * This method takes a width and a height and generates a rectangle of that width and height near
+     * the specified x and y points
+     *
+     * @param width The width of the rectangle.
+     * @param height The height of the rectangle.
+     * @param startX The x location of the bottom left vertex.
+     * @param startY The y location of the bottom left vertex.
+     * @return A list of Vertex objects that tells OpenGL how to draw the rectangle.
+     */
     public ArrayList<Vertex> rect(int width, int height, int startX, int startY) {
         ArrayList<Vertex> vertices = new ArrayList<>();
 
@@ -183,6 +266,11 @@ public class MyKaleidoscope implements GLEventListener {
         return vertices;
     }
 
+    /**
+     * Grabs a random color from the palette List.
+     *
+     * @return An array of 3 floats for R, G, and B, respectively.
+     */
     public float[] getRandomPaletteColorArray() {
         Random r = new Random();
         int rand = r.nextInt(palette.size());
@@ -190,6 +278,18 @@ public class MyKaleidoscope implements GLEventListener {
         return getGLColorArray(palette.get(rand));
     }
 
+    /**
+     * This method will generate a predetermined amount of shapes for each viewport.
+     * The general algorithm for generation is as follows:
+     *      1) Randomly select 1 of 4 types of shapes
+     *      2) Randomly generate a size variable somewhere between 5 and 20
+     *      3) Depending on the shape:
+     *          a) Triangles: just generate 3 random vertices within the bounds of a quadrant, choose random color
+     *          b) Circles: call upon the circle method to generate the vertices for you, choose random color
+     *          c) Rectangles: call upon the rect method to generate the vertices for you, choose random color
+     *          d) Epicycloid: call upon the epicycloid method to generate the vertices for you, choose random color
+     *      4) Add the newly generated shape to the list of shapes to be drawn.
+     */
     public void generateShapes() {
         Random r = new Random();
 
