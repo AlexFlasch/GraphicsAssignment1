@@ -117,6 +117,8 @@ public class ReflectedObject implements Cloneable {
             gl.glBegin(glShape);
             gl.glColor3f(colorRGB[0], colorRGB[1], colorRGB[2]);
             for(Vertex vert : translatedVerts) {
+                if(vert.x > 200 || vert.x < -200 || vert.y < -200 || vert.y > 200)
+                    System.out.println("vert x: " + vert.x + "\nvert y: " + vert.y);
                 gl.glVertex2d(vert.x, vert.y);
             }
             gl.glEnd();

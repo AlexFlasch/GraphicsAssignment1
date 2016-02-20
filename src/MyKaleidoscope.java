@@ -122,7 +122,7 @@ public class MyKaleidoscope implements GLEventListener {
         int viewportWidth = windowWidth / viewportsX;
         int viewportHeight = windowHeight / viewportsY;
 
-        glu.gluOrtho2D(-viewportWidth / 2, viewportWidth / 2, -viewportHeight / 2, viewportHeight / 2);
+        glu.gluOrtho2D(-200, 200, -200, 200);
         gl.glMatrixMode(GL2.GL_MODELVIEW);
     }
 
@@ -175,8 +175,8 @@ public class MyKaleidoscope implements GLEventListener {
      * @param gl JOGL GL2 object
      */
     public void drawShapes(GL2 gl) {
-        int viewportWidth = 2 * (windowWidth / viewportsX);
-        int viewportHeight = 2 * (windowHeight / viewportsY);
+        int viewportWidth = windowWidth / viewportsX;
+        int viewportHeight = windowHeight / viewportsY;
 
         // create proper amount of viewports
         for(int i = 0; i < viewportsY; i++) {
@@ -191,6 +191,20 @@ public class MyKaleidoscope implements GLEventListener {
                 for (ReflectedObject ro : reflectedObjects) {
                     ro.draw(gl);
                 }
+
+                gl.glLineWidth(10.0f);
+                gl.glColor3f(1.0f, 1.0f, 1.0f);
+
+                gl.glBegin(GL.GL_LINES);
+                gl.glVertex2i(0, -200);
+                gl.glVertex2i(0, 200);
+                gl.glEnd();
+
+                gl.glBegin(GL.GL_LINES);
+                gl.glVertex2i(-200, 0);
+                gl.glVertex2i(200, 0);
+                gl.glEnd();
+
                 // clear list so its different for the next viewport
                 reflectedObjects.clear();
             }
@@ -303,8 +317,8 @@ public class MyKaleidoscope implements GLEventListener {
 
             ReflectedObject temp;
 
-            int quadrantWidth = windowWidth / 2;
-            int quadrantHeight = windowHeight / 2;
+            int quadrantWidth = 100;
+            int quadrantHeight = 100;
 
             switch(shape) {
                 case 0:
